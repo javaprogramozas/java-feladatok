@@ -11,9 +11,14 @@ public class GuessingGame {
     private int attemptsMade = 1;
 
     public GuessingGame() {
-        maximumNumber = 100;
-        maximumAttempts = 10;
-        numberToGuess = new Random().nextInt(maximumNumber) + 1;
+        this(100, 10);
+    }
+
+    public GuessingGame(int maximumNumber, int maximumAttempts) {
+        validateSettings(maximumNumber, maximumAttempts);
+        this.maximumNumber = maximumNumber;
+        this.maximumAttempts = maximumAttempts;
+        numberToGuess = new Random().nextInt(this.maximumNumber) + 1;
     }
 
     public GuessResult evaluateGuess(int guess) {
@@ -45,7 +50,19 @@ public class GuessingGame {
         return maximumAttempts;
     }
 
+    public int getNumberToGuess() {
+        return numberToGuess;
+    }
+
     public boolean hasMoreAttempts() {
         return attemptsMade <= maximumAttempts;
+    }
+
+    private void validateSettings(int maximumNumber, int maximumAttempts) {
+        if (maximumNumber / 2 < maximumAttempts) {
+            throw new IllegalArgumentException(
+                    String.format("Több mint 50%% esély van a kitalálásra: max=%d, kísérlet=%d", maximumNumber, maximumAttempts)
+            );
+        }
     }
 }

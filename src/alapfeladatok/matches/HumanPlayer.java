@@ -18,11 +18,12 @@ public class HumanPlayer implements Player {
     }
 
     @Override
-    public int chooseMatchesToPick(int maxPick, String echoString) {
+    public int chooseMatchesToPick(GameContext context) {
         int userPick = 0;
+        int maxPick = context.getMaxPick();
         do {
             try {
-                System.out.print(echoString);
+                System.out.print(context.getEcho(name));
                 userPick = Integer.parseInt(scanner.nextLine());
                 if (userPick < 1 || userPick > maxPick) {
                     System.out.printf("1 és %d közötti számot kell beírnod!%n", maxPick);

@@ -1,5 +1,6 @@
 package tömbök.sudoku;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,6 +26,50 @@ public class SudokuTable {
         possibleValues.retainAll(getPossibleValuesInColumn(column));
         possibleValues.retainAll(getPossibleValuesInZone(convertRowAndColumToZone(row, column)));
         return possibleValues;
+    }
+
+    public void generate() {
+        int row = 0, column = 0;
+        Step step = new Step(null, row, column, getPossibleValues(row, column));
+        while (true) {
+            if (!step.getPossibleValues().isEmpty()) {
+                Integer value = step.getPossibleValues().remove(0);
+                data[row][column] = value;
+                if (allCellsAreFilled()) {
+                    break;
+                }
+                row = column == 8 ? row + 1 : row;
+                column = column == 8 ? 0 : column + 1;
+                step = new Step(step, row, column, getPossibleValues(row, column));
+            } else {
+                data[row][column] = EMPTY_VALUE;
+                step = step.getPrevious();
+                row = step.getRow();
+                column = step.getColumn();
+            }
+            System.out.println(this);
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < SUDOKU_SIZE; i++) {
+            builder.append(Arrays.toString(data[i]))
+                    .append("\n");
+        }
+        return builder.toString();
+    }
+
+    private boolean allCellsAreFilled() {
+        for (int row = 0; row < SUDOKU_SIZE; row++) {
+            for (int column = 0; column < SUDOKU_SIZE; column++) {
+                if (data[row][column] == EMPTY_VALUE) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private Set<Integer> getPossibleValuesInRow(int row) {

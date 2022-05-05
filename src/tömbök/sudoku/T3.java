@@ -16,7 +16,9 @@ public class T3 {
         };
 
         SudokuTable sudokuTable = new SudokuTable();
+        sudokuTable.generate();
 
-        System.out.println(sudokuTable.getPossibleValues(6, 5));
+        System.out.println("================");
+        System.out.println(sudokuTable);
     }
 }

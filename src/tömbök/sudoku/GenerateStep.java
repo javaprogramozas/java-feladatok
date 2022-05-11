@@ -5,15 +5,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class Step {
+public class GenerateStep {
 
-    private Step previous;
+    private GenerateStep previous;
 
     private int row, column;
 
     private List<Integer> possibleValues;
 
-    public Step(Step previous, int row, int column, Set<Integer> possibleValues) {
+    public GenerateStep(GenerateStep previous, int row, int column, Set<Integer> possibleValues) {
         this.previous = previous;
         this.row = row;
         this.column = column;
@@ -21,7 +21,7 @@ public class Step {
         Collections.shuffle(this.possibleValues);
     }
 
-    public Step getPrevious() {
+    public GenerateStep getPrevious() {
         return previous;
     }
 

@@ -1,7 +1,10 @@
 package tömbök.sudoku;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 public class SudokuTable {
@@ -10,6 +13,7 @@ public class SudokuTable {
     public static final int EMPTY_VALUE = 0;
     private static final Set<Integer> ALL_POSSIBLE_VALUES = Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9);
 
+    private final Random random = new Random();
     private int[][] data;
 
     public SudokuTable() {
@@ -30,7 +34,7 @@ public class SudokuTable {
 
     public void generate() {
         int row = 0, column = 0;
-        Step step = new Step(null, row, column, getPossibleValues(row, column));
+        GenerateStep step = new GenerateStep(null, row, column, getPossibleValues(row, column));
         while (true) {
             if (!step.getPossibleValues().isEmpty()) {
                 Integer value = step.getPossibleValues().remove(0);
@@ -40,15 +44,82 @@ public class SudokuTable {
                 }
                 row = column == 8 ? row + 1 : row;
                 column = column == 8 ? 0 : column + 1;
-                step = new Step(step, row, column, getPossibleValues(row, column));
+                step = new GenerateStep(step, row, column, getPossibleValues(row, column));
             } else {
                 data[row][column] = EMPTY_VALUE;
                 step = step.getPrevious();
                 row = step.getRow();
                 column = step.getColumn();
             }
-            System.out.println(this);
         }
+    }
+
+    public void createPuzzle(int numberInPuzzle) {
+        generate();
+        List<Position> allFilledPositions = getAllFilledPositions();
+        Position position = allFilledPositions.get(random.nextInt(allFilledPositions.size()));
+        RemoveStep step = new RemoveStep(null, position, getValue(position));
+        clear(position);
+
+        int removedCount = 1;
+
+        while (true) {
+            if (hasCellWithExactlyOnePossibleValue()) {
+                if (removedCount == SUDOKU_SIZE * SUDOKU_SIZE - numberInPuzzle) {
+                    break;
+                }
+                allFilledPositions = getAllFilledPositions();
+                allFilledPositions.removeAll(step.previouslyRemovedPositions());
+                if (allFilledPositions.isEmpty()) {
+                    throw new IllegalStateException("Not possible to create puzzle");
+                }
+                position = allFilledPositions.get(random.nextInt(allFilledPositions.size()));
+                step = new RemoveStep(step, position, getValue(position));
+                clear(position);
+                removedCount++;
+            } else {
+                RemoveStep previous = step.previous();
+                setValue(step.position(), step.value());
+                removedCount--;
+                previous.previouslyRemovedPositions().add(step.position());
+                step = previous;
+            }
+        }
+    }
+
+    private List<Position> getAllFilledPositions() {
+        List<Position> results = new ArrayList<>();
+        for (int row = 0; row < SUDOKU_SIZE; row++) {
+            for (int column = 0; column < SUDOKU_SIZE; column++) {
+                if (data[row][column] != EMPTY_VALUE) {
+                    results.add(new Position(row, column));
+                }
+            }
+        }
+        return results;
+    }
+
+    private void clear(Position position) {
+        setValue(position, EMPTY_VALUE);
+    }
+
+    private int getValue(Position position) {
+        return data[position.row()][position.column()];
+    }
+
+    private void setValue(Position position, int value) {
+        data[position.row()][position.column()] = value;
+    }
+
+    private boolean hasCellWithExactlyOnePossibleValue() {
+        for (int row = 0; row < SUDOKU_SIZE; row++) {
+            for (int column = 0; column < SUDOKU_SIZE; column++) {
+                if (data[row][column] == EMPTY_VALUE && getPossibleValues(row, column).size() == 1) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override

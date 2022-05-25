@@ -1,6 +1,5 @@
 package tömbök.sudoku;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -13,7 +12,9 @@ public class T3 {
         List<Command> commands = List.of(
                 new NewCommand(sudokuTable),
                 new ExitCommand(sudokuTable),
-                new PutCommand(sudokuTable)
+                new PutCommand(sudokuTable),
+                new SolveCommand(sudokuTable),
+                new ShowCommand(sudokuTable)
         );
 
         try (Scanner input = new Scanner(System.in)){
@@ -31,9 +32,9 @@ public class T3 {
         }
     }
 
-    private static Optional<Command> findCommand(List<Command> commands, String enteredCommand) {
+    private static Optional<Command> findCommand(List<Command> commands, String instruction) {
         for (Command command : commands) {
-            if (command.acceptsCommand(enteredCommand)) {
+            if (command.acceptsCommand(instruction)) {
                 return Optional.of(command);
             }
         }

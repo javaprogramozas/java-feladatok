@@ -1,7 +1,9 @@
 package tömbök.sudoku;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -36,8 +38,8 @@ public class SudokuTable {
 
     public void createPuzzle(int numberInPuzzle) {
         clear();
+        init();
         solve(1, false);
-        //System.out.println(this);
         List<Position> allFilledPositions = getAllFilledPositions();
         Position position = allFilledPositions.get(random.nextInt(allFilledPositions.size()));
         RemoveStep step = new RemoveStep(null, position, getValue(position));
@@ -77,6 +79,20 @@ public class SudokuTable {
                 removedCount--;
                 previous.previouslyRemovedPositions().add(step.position());
                 step = previous;
+            }
+        }
+    }
+
+    private void init() {
+        for (int zone : Set.of(0, 4, 8)) {
+            List<Integer> randomNumbers = new ArrayList<>(ALL_POSSIBLE_VALUES);
+            Collections.shuffle(randomNumbers);
+            Iterator<Integer> iterator = randomNumbers.iterator();
+            Position position = convertZoneToTopLeftPosition(zone);
+            for (int i = 0; i < ZONE_SIZE; i++) {
+                for (int j = 0; j < ZONE_SIZE; j++) {
+                    setValueInternal(position.row() + i, position.column() + j, iterator.next());
+                }
             }
         }
     }
@@ -240,11 +256,10 @@ public class SudokuTable {
 
     private Set<Integer> getPossibleValuesInZone(int zone) {
         Set<Integer> result = new HashSet<>(ALL_POSSIBLE_VALUES);
-        int column = (zone % ZONE_SIZE) * ZONE_SIZE;
-        int row = (zone / ZONE_SIZE) * ZONE_SIZE;
+        Position position = convertZoneToTopLeftPosition(zone);
         for (int i = 0; i < ZONE_SIZE; i++) {
             for (int j = 0; j < ZONE_SIZE; j++) {
-                result.remove(getValue(row + i, column + j));
+                result.remove(getValue(position.row() + i, position.column() + j));
             }
         }
         return result;
@@ -252,6 +267,12 @@ public class SudokuTable {
 
     private int convertRowAndColumToZone(int row, int column) {
         return (row / ZONE_SIZE) * ZONE_SIZE + (column / ZONE_SIZE);
+    }
+
+    private Position convertZoneToTopLeftPosition(int zone) {
+        int column = (zone % ZONE_SIZE) * ZONE_SIZE;
+        int row = (zone / ZONE_SIZE) * ZONE_SIZE;
+        return position(row, column);
     }
 
     private void validateInputSize(int[][] data) {

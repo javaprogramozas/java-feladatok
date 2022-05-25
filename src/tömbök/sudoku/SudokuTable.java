@@ -19,6 +19,7 @@ public class SudokuTable {
 
     private final Random random = new Random();
     private final int[][] data;
+    private final Set<Position> userFilledPositions = new HashSet<>();
 
     public SudokuTable() {
         this(new int[SUDOKU_SIZE][SUDOKU_SIZE]);
@@ -57,7 +58,7 @@ public class SudokuTable {
                     if (previous == null) {
                         throw new IllegalStateException("Not possible to create puzzle");
                     }
-                    setValue(step.position(), step.value());
+                    setValueInternal(step.position(), step.value());
                     removedCount--;
                     previous.previouslyRemovedPositions().add(step.position());
                     step = previous;
@@ -72,7 +73,7 @@ public class SudokuTable {
                 if (previous == null) {
                     throw new IllegalStateException("Not possible to create puzzle");
                 }
-                setValue(step.position(), step.value());
+                setValueInternal(step.position(), step.value());
                 removedCount--;
                 previous.previouslyRemovedPositions().add(step.position());
                 step = previous;
@@ -115,7 +116,7 @@ public class SudokuTable {
         while (count < maxCount) {
             if (!step.possibleValues().isEmpty()) {
                 Integer value = step.possibleValues().remove(0);
-                setValue(position, value);
+                setValueInternal(position, value);
                 if (allCellsAreFilled()) {
                     count++;
                     continue;
@@ -163,11 +164,23 @@ public class SudokuTable {
         return data[row][column];
     }
 
-    private void setValue(Position position, int value) {
-        setValue(position.row(), position.column(), value);
+    public boolean setValue(int row, int column, int value) {
+        Position position = position(row, column);
+        if (ALL_POSSIBLE_VALUES.contains(value)
+                && (isEmpty(row, column) || userFilledPositions.contains(position))
+                && getPossibleValues(row, column).contains(value)) {
+            setValueInternal(row, column, value);
+            userFilledPositions.add(position);
+            return true;
+        }
+        return false;
     }
 
-    private void setValue(int row, int column, int value) {
+    private void setValueInternal(Position position, int value) {
+        setValueInternal(position.row(), position.column(), value);
+    }
+
+    private void setValueInternal(int row, int column, int value) {
         data[row][column] = value;
     }
 
@@ -184,7 +197,7 @@ public class SudokuTable {
     }
 
     private void clear(int row, int column) {
-        setValue(row, column, EMPTY_VALUE);
+        setValueInternal(row, column, EMPTY_VALUE);
     }
 
     private boolean allCellsAreFilled() {

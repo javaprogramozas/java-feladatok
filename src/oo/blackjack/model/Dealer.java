@@ -3,9 +3,10 @@ package oo.blackjack.model;
 import java.util.List;
 
 import static oo.blackjack.model.Hand.BLACK_JACK_VALUE;
+import static oo.blackjack.model.PlayerStatus.BLACKJACK;
 import static oo.blackjack.model.PlayerStatus.BUSTED;
-import static oo.blackjack.model.PlayerStatus.FINISHED;
 import static oo.blackjack.model.PlayerStatus.PLAYING;
+import static oo.blackjack.model.PlayerStatus.STANDING;
 
 public class Dealer extends AbstractPlayer {
 
@@ -23,10 +24,24 @@ public class Dealer extends AbstractPlayer {
         hand.addCard(deck.remove(0));
         int value = hand.getValue();
         if (value >= TARGET_HAND_VALUE) {
-            status = FINISHED;
+            if (hand.getNumberOfCards() == 2 && value == BLACK_JACK_VALUE) {
+                status = BLACKJACK;
+            } else {
+                status = STANDING;
+            }
         }
         if (value > BLACK_JACK_VALUE) {
             status = BUSTED;
         }
+    }
+
+    @Override
+    public List<Action> getAvailableActions() {
+        return List.of();
+    }
+
+    @Override
+    public void apply(Action action, List<Card> deck) {
+        throw new UnsupportedOperationException("The bank has internal decision making!");
     }
 }

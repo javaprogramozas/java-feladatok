@@ -30,4 +30,13 @@ public class Hand {
         }
         return value;
     }
+
+    @Override
+    public String toString() {
+        return cards + " (" + getValue() + ")";
+    }
+
+    public int getNumberOfCards() {
+        return cards.size();
+    }
 }

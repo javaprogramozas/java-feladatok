@@ -2,6 +2,6 @@ package oo.blackjack.model;
 
 public enum PlayerStatus {
 
-    PLAYING, BUSTED, FINISHED
+    PLAYING, BUSTED, STANDING, SURRENDERED, BLACKJACK
 
 }

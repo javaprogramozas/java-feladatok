@@ -3,9 +3,10 @@ package oo.blackjack.model;
 import java.util.List;
 
 import static oo.blackjack.model.Hand.BLACK_JACK_VALUE;
+import static oo.blackjack.model.PlayerStatus.BLACKJACK;
 import static oo.blackjack.model.PlayerStatus.BUSTED;
-import static oo.blackjack.model.PlayerStatus.FINISHED;
 import static oo.blackjack.model.PlayerStatus.PLAYING;
+import static oo.blackjack.model.PlayerStatus.STANDING;
 
 public abstract class AbstractPlayer {
 
@@ -35,7 +36,24 @@ public abstract class AbstractPlayer {
             status = BUSTED;
         }
         if (value == BLACK_JACK_VALUE) {
-            status = FINISHED;
+            if (hand.getNumberOfCards() == 2) {
+                status = BLACKJACK;
+            } else {
+                status = STANDING;
+            }
         }
+    }
+
+    @Override
+    public String toString() {
+        return name + ": " + hand;
+    }
+
+    public abstract List<Action> getAvailableActions();
+
+    public abstract void apply(Action action, List<Card> deck);
+
+    public int getHandValue() {
+        return hand.getValue();
     }
 }

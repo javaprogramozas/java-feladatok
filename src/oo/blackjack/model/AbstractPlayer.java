@@ -6,13 +6,14 @@ import static oo.blackjack.model.Hand.BLACK_JACK_VALUE;
 import static oo.blackjack.model.PlayerStatus.BLACKJACK;
 import static oo.blackjack.model.PlayerStatus.BUSTED;
 import static oo.blackjack.model.PlayerStatus.PLAYING;
+import static oo.blackjack.model.PlayerStatus.SKIPPED;
 import static oo.blackjack.model.PlayerStatus.STANDING;
 
 public abstract class AbstractPlayer {
 
     private final String name;
     protected PlayerStatus status = PLAYING;
-    protected Hand hand = new Hand();
+    protected Hand hand;
 
     public AbstractPlayer(String name) {
         this.name = name;
@@ -46,6 +47,9 @@ public abstract class AbstractPlayer {
 
     @Override
     public String toString() {
+        if (status == SKIPPED) {
+            return name + " skipped";
+        }
         return name + ": " + hand;
     }
 

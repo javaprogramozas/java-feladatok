@@ -4,8 +4,11 @@ import java.util.List;
 
 public class HumanPlayer extends AbstractPlayer {
 
+    private int budget;
+
     public HumanPlayer(String name) {
         super(name);
+        this.budget = 50;
     }
 
     @Override
@@ -30,5 +33,31 @@ public class HumanPlayer extends AbstractPlayer {
             case STAND -> status = PlayerStatus.STANDING;
             case SURRENDER -> status = PlayerStatus.SURRENDERED;
         }
+    }
+
+    public void createHand(int bet) {
+        if (bet < 0) {
+            throw new IllegalArgumentException("Bet cannot be negative!");
+        }
+        if (bet > budget) {
+            throw new IllegalArgumentException("Bet (" + bet + ") cannot be greater than player budget (" + budget + ")");
+        }
+        if (bet != 0) {
+            hand = new Hand(bet);
+            budget -= bet;
+        } else {
+            status = PlayerStatus.SKIPPED;
+        }
+    }
+
+    public void collectReward(double multiplier) {
+        if (status != PlayerStatus.SKIPPED) {
+            budget += hand.getBet() * multiplier;
+            hand = null;
+        }
+    }
+
+    public int getBudget() {
+        return budget;
     }
 }

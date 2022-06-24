@@ -1,13 +1,16 @@
-package oo.blackjack.model;
+package oo.blackjack.model.players;
+
+import oo.blackjack.model.cards.Card;
+import oo.blackjack.model.cards.Deck;
 
 import java.util.List;
 
-import static oo.blackjack.model.Hand.BLACK_JACK_VALUE;
-import static oo.blackjack.model.PlayerStatus.BLACKJACK;
-import static oo.blackjack.model.PlayerStatus.BUSTED;
-import static oo.blackjack.model.PlayerStatus.PLAYING;
-import static oo.blackjack.model.PlayerStatus.SKIPPED;
-import static oo.blackjack.model.PlayerStatus.STANDING;
+import static oo.blackjack.model.players.Hand.BLACK_JACK_VALUE;
+import static oo.blackjack.model.players.PlayerStatus.BLACKJACK;
+import static oo.blackjack.model.players.PlayerStatus.BUSTED;
+import static oo.blackjack.model.players.PlayerStatus.PLAYING;
+import static oo.blackjack.model.players.PlayerStatus.SKIPPED;
+import static oo.blackjack.model.players.PlayerStatus.STANDING;
 
 public abstract class AbstractPlayer {
 
@@ -27,11 +30,11 @@ public abstract class AbstractPlayer {
         return status;
     }
 
-    public void draw(List<Card> deck) {
+    public void draw(Deck deck) {
         if (status != PLAYING) {
             throw new IllegalStateException("Cannot draw in " + status + " status!");
         }
-        hand.addCard(deck.remove(0));
+        hand.addCard(deck.getCard());
         int value = hand.getValue();
         if (value > BLACK_JACK_VALUE) {
             status = BUSTED;
@@ -55,7 +58,7 @@ public abstract class AbstractPlayer {
 
     public abstract List<Action> getAvailableActions();
 
-    public abstract void apply(Action action, List<Card> deck);
+    public abstract void apply(Action action, Deck deck);
 
     public int getHandValue() {
         return hand.getValue();

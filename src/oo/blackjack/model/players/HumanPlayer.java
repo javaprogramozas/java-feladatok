@@ -1,4 +1,7 @@
-package oo.blackjack.model;
+package oo.blackjack.model.players;
+
+import oo.blackjack.model.cards.Card;
+import oo.blackjack.model.cards.Deck;
 
 import java.util.List;
 
@@ -24,7 +27,7 @@ public class HumanPlayer extends AbstractPlayer {
     }
 
     @Override
-    public void apply(Action action, List<Card> deck) {
+    public void apply(Action action, Deck deck) {
         if (status != PlayerStatus.PLAYING) {
             throw new IllegalStateException("No actions should be applied in " + status + " status!");
         }
@@ -45,6 +48,7 @@ public class HumanPlayer extends AbstractPlayer {
         if (bet != 0) {
             hand = new Hand(bet);
             budget -= bet;
+            status = PlayerStatus.PLAYING;
         } else {
             status = PlayerStatus.SKIPPED;
         }

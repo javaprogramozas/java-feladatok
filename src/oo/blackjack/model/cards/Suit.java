@@ -1,4 +1,4 @@
-package oo.blackjack.model;
+package oo.blackjack.model.cards;
 
 public enum Suit {
 

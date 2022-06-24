@@ -1,12 +1,14 @@
-package oo.blackjack.model;
+package oo.blackjack.model.players;
+
+import oo.blackjack.model.cards.Deck;
 
 import java.util.List;
 
-import static oo.blackjack.model.Hand.BLACK_JACK_VALUE;
-import static oo.blackjack.model.PlayerStatus.BLACKJACK;
-import static oo.blackjack.model.PlayerStatus.BUSTED;
-import static oo.blackjack.model.PlayerStatus.PLAYING;
-import static oo.blackjack.model.PlayerStatus.STANDING;
+import static oo.blackjack.model.players.Hand.BLACK_JACK_VALUE;
+import static oo.blackjack.model.players.PlayerStatus.BLACKJACK;
+import static oo.blackjack.model.players.PlayerStatus.BUSTED;
+import static oo.blackjack.model.players.PlayerStatus.PLAYING;
+import static oo.blackjack.model.players.PlayerStatus.STANDING;
 
 public class Dealer extends AbstractPlayer {
 
@@ -18,11 +20,11 @@ public class Dealer extends AbstractPlayer {
     }
 
     @Override
-    public void draw(List<Card> deck) {
+    public void draw(Deck deck) {
         if (status != PLAYING) {
             throw new IllegalStateException("Cannot draw in " + status + " status!");
         }
-        hand.addCard(deck.remove(0));
+        hand.addCard(deck.getCard());
         int value = hand.getValue();
         if (value >= TARGET_HAND_VALUE) {
             if (hand.getNumberOfCards() == 2 && value == BLACK_JACK_VALUE) {
@@ -42,7 +44,7 @@ public class Dealer extends AbstractPlayer {
     }
 
     @Override
-    public void apply(Action action, List<Card> deck) {
+    public void apply(Action action, Deck deck) {
         throw new UnsupportedOperationException("The bank has internal decision making!");
     }
 }

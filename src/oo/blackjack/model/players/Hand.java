@@ -1,4 +1,7 @@
-package oo.blackjack.model;
+package oo.blackjack.model.players;
+
+import oo.blackjack.model.cards.Card;
+import oo.blackjack.model.cards.Rank;
 
 import java.util.ArrayList;
 import java.util.List;

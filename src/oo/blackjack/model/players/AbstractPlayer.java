@@ -1,9 +1,6 @@
 package oo.blackjack.model.players;
 
-import oo.blackjack.model.cards.Card;
 import oo.blackjack.model.cards.Deck;
-
-import java.util.List;
 
 import static oo.blackjack.model.players.Hand.BLACK_JACK_VALUE;
 import static oo.blackjack.model.players.PlayerStatus.BLACKJACK;
@@ -56,11 +53,11 @@ public abstract class AbstractPlayer {
         return name + ": " + hand;
     }
 
-    public abstract List<Action> getAvailableActions();
-
-    public abstract void apply(Action action, Deck deck);
-
     public int getHandValue() {
         return hand.getValue();
+    }
+
+    public Hand getHand() {
+        return hand;
     }
 }

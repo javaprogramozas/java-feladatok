@@ -1,41 +1,16 @@
 package oo.blackjack.model.players;
 
-import oo.blackjack.model.cards.Card;
+import oo.blackjack.model.RoundResults;
 import oo.blackjack.model.cards.Deck;
-
-import java.util.List;
 
 public class HumanPlayer extends AbstractPlayer {
 
     private int budget;
+    private int insurance;
 
     public HumanPlayer(String name) {
         super(name);
         this.budget = 50;
-    }
-
-    @Override
-    public List<Action> getAvailableActions() {
-        if (status != PlayerStatus.PLAYING) {
-            throw new IllegalStateException("There are no actions in " + status + " status!");
-        }
-        if (hand.getNumberOfCards() == 2) {
-            return List.of(Action.HIT, Action.STAND, Action.SURRENDER);
-        } else {
-            return List.of(Action.HIT, Action.STAND);
-        }
-    }
-
-    @Override
-    public void apply(Action action, Deck deck) {
-        if (status != PlayerStatus.PLAYING) {
-            throw new IllegalStateException("No actions should be applied in " + status + " status!");
-        }
-        switch (action) {
-            case HIT -> draw(deck);
-            case STAND -> status = PlayerStatus.STANDING;
-            case SURRENDER -> status = PlayerStatus.SURRENDERED;
-        }
     }
 
     public void createHand(int bet) {
@@ -54,14 +29,48 @@ public class HumanPlayer extends AbstractPlayer {
         }
     }
 
-    public void collectReward(double multiplier) {
+    public void setInsurance(int insurance) {
+        if (insurance <= 0) {
+            throw new IllegalArgumentException("Insurance must be positive!");
+        }
+        if (insurance > budget) {
+            throw new IllegalArgumentException("Insurance (" + insurance + ") cannot be greater than player budget (" + budget + ")");
+        }
+        double maxInsurance = hand.getBet() * 0.5;
+        if (insurance > maxInsurance) {
+            throw new IllegalArgumentException("Insurance (" + insurance + ") cannot be greater than half of bet (" + maxInsurance + ")");
+        }
+        budget -= insurance;
+        this.insurance = insurance;
+    }
+
+    public void collectReward(RoundResults results) {
         if (status != PlayerStatus.SKIPPED) {
-            budget += hand.getBet() * multiplier;
+            budget += hand.getBet() * results.multiplier();
             hand = null;
+            if (insurance > 0 && results.dealerHadBlackjack()) {
+                budget += insurance * 2;
+                insurance = 0;
+            }
         }
     }
 
     public int getBudget() {
         return budget;
+    }
+
+    public void setStatus(PlayerStatus status) {
+        if (status != PlayerStatus.PLAYING) {
+            throw new IllegalStateException("Status can be set only for player in " + PlayerStatus.PLAYING + " status!");
+        }
+    }
+
+    public void executeDoubleAction(Deck deck) {
+        draw(deck);
+        budget -= hand.getBet();
+        hand.doubleBet();
+        if (status == PlayerStatus.PLAYING) {
+            status = PlayerStatus.STANDING;
+        }
     }
 }

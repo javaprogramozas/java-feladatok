@@ -1,8 +1,7 @@
 package oo.blackjack.model.players;
 
 import oo.blackjack.model.cards.Deck;
-
-import java.util.List;
+import oo.blackjack.model.cards.Rank;
 
 import static oo.blackjack.model.players.Hand.BLACK_JACK_VALUE;
 import static oo.blackjack.model.players.PlayerStatus.BLACKJACK;
@@ -16,7 +15,6 @@ public class Dealer extends AbstractPlayer {
 
     public Dealer() {
         super("Bank");
-        hand = new Hand(0);
     }
 
     @Override
@@ -38,13 +36,12 @@ public class Dealer extends AbstractPlayer {
         }
     }
 
-    @Override
-    public List<Action> getAvailableActions() {
-        return List.of();
+    public void resetHand() {
+        hand = new Hand(0);
+        status = PLAYING;
     }
 
-    @Override
-    public void apply(Action action, Deck deck) {
-        throw new UnsupportedOperationException("The bank has internal decision making!");
+    public boolean isFirstCardAce() {
+        return hand.getCard(0).rank() == Rank.ACE;
     }
 }

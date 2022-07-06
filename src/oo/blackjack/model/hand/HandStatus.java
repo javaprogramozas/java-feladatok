@@ -1,6 +1,6 @@
-package oo.blackjack.model.players;
+package oo.blackjack.model.hand;
 
-public enum PlayerStatus {
+public enum HandStatus {
 
     SKIPPED, PLAYING, BUSTED, STANDING, SURRENDERED, BLACKJACK
 

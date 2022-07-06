@@ -2,12 +2,11 @@ package oo.blackjack;
 
 import oo.blackjack.model.RoundResults;
 import oo.blackjack.model.cards.Deck;
-import oo.blackjack.model.players.AbstractPlayer;
 import oo.blackjack.model.players.Action;
 import oo.blackjack.model.players.Dealer;
-import oo.blackjack.model.players.Hand;
+import oo.blackjack.model.hand.Hand;
 import oo.blackjack.model.players.HumanPlayer;
-import oo.blackjack.model.players.PlayerStatus;
+import oo.blackjack.model.hand.HandStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +14,7 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
 
 public class Blackjack {
 
@@ -24,6 +23,8 @@ public class Blackjack {
     private Deck deck = new Deck(1);
     private Dealer dealer = new Dealer();
     private List<HumanPlayer> players = new ArrayList<>();
+    private Hand dealerHand;
+    private List<Hand> playerHands;
     private Scanner scanner = new Scanner(System.in);
 
     public void setup() {
@@ -51,8 +52,8 @@ public class Blackjack {
 
     public void play() {
         while (hasPlayerWithBudget()) {
-            collectBets();
-            if (!hasPlayerWillingToPlay()) {
+            collectBetsAndCreateHands();
+            if (playerHands.isEmpty()) {
                 break;
             }
             initialDraws();
@@ -71,48 +72,47 @@ public class Blackjack {
         return false;
     }
 
-    private boolean hasPlayerWillingToPlay() {
-        for (HumanPlayer player : players) {
-            if (player.getStatus() == PlayerStatus.PLAYING) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void collectBets() {
+    private void collectBetsAndCreateHands() {
         System.out.println("Please make your bets!");
         System.out.println("(place 0 bet, if you would like to skip this round)");
+        playerHands = new ArrayList<>();
         for (HumanPlayer player : players) {
-            IntConsumer consumer = new IntConsumer() {
+            IntFunction<Optional<Hand>> function = new IntFunction<>() {
                 @Override
-                public void accept(int value) {
-                    player.createHand(value);
+                public Optional<Hand> apply(int value) {
+                    return player.createHand(value);
                 }
             };
-            getPlayerBetOrInsurance(String.format("%s's bet (0 - %d): ", player.getName(), player.getBudget()), consumer);
+            Optional<Hand> optionalHand
+                    = getPlayerBetOrInsurance(String.format("%s's bet (0 - %d): ", player.getName(), player.getBudget()), function);
+            if (optionalHand.isPresent()) {
+                playerHands.add(optionalHand.get());
+            }
         }
-        dealer.resetHand();
+        dealerHand = new Hand(dealer, 0);
     }
 
     private void initialDraws() {
-        List<AbstractPlayer> firstRoundOfDraws = new ArrayList<>(players);
-        firstRoundOfDraws.add(dealer);
-        firstRoundOfDraws.addAll(players);
-        drawAllPlayers(deck, firstRoundOfDraws);
+        for (Hand hand : playerHands) {
+            hand.draw(deck);
+        }
+        dealerHand.draw(deck);
+        for (Hand hand : playerHands) {
+            hand.draw(deck);
+        }
     }
 
     private void actionDraws() {
-        for (HumanPlayer player : players) {
-            System.out.println(player);
-            while (player.getStatus() == PlayerStatus.PLAYING) {
-                List<Action> actions = getPlayerActions(player);
+        for (Hand hand : playerHands) {
+            System.out.println(hand);
+            while (hand.getStatus() == HandStatus.PLAYING) {
+                List<Action> actions = getHandActions(hand);
                 System.out.print("Actions: " + getActionLabels(actions) + "? ");
                 String userInput = scanner.nextLine();
                 Optional<Action> selectedAction = findActionByCommand(actions, userInput);
                 if (selectedAction.isPresent()) {
-                    apply(player, selectedAction.get());
-                    System.out.println(player);
+                    apply(hand, selectedAction.get());
+                    System.out.println(hand);
                 } else {
                     System.out.println("Unknown action command: " + userInput);
                 }
@@ -120,27 +120,28 @@ public class Blackjack {
         }
 
         // Dealer should draw cards
-        if (isAnyPlayerIn(players, Set.of(PlayerStatus.BLACKJACK, PlayerStatus.STANDING))) {
-            while (dealer.getStatus() == PlayerStatus.PLAYING) {
-                dealer.draw(deck);
+        if (isAnyPlayerIn(playerHands, Set.of(HandStatus.BLACKJACK, HandStatus.STANDING))) {
+            while (dealerHand.getStatus() == HandStatus.PLAYING) {
+                dealerHand.draw(deck);
             }
-            System.out.println(dealer);
+            System.out.println(dealerHand);
         } else {
             System.out.println(dealer.getName() + " skips drawing cards");
         }
     }
 
     private void evaluateRound() {
-        for (HumanPlayer player : players) {
-            RoundResults results = switch (player.getStatus()) {
-                case BUSTED -> new RoundResults(player.getName() + " busted and lost", 0, dealer.getStatus() == PlayerStatus.BLACKJACK);
+        for (Hand playerHand : playerHands) {
+            HumanPlayer player = playerHand.getHumanOwner();
+            RoundResults results = switch (playerHand.getStatus()) {
+                case BUSTED -> new RoundResults(player.getName() + " busted and lost", 0, dealerHand.getStatus() == HandStatus.BLACKJACK);
                 case SURRENDERED -> new RoundResults(player.getName() + " surrendered", 0.5);
-                case BLACKJACK -> handlePlayerBlackJack(player, dealer);
-                case STANDING -> handlePlayerStanding(player, dealer);
-                case PLAYING -> throw new IllegalStateException(player.getName() + " should not be in " + player.getStatus() + " status");
+                case BLACKJACK -> handlePlayerBlackJack(playerHand, dealerHand);
+                case STANDING -> handlePlayerStanding(playerHand, dealerHand);
+                case PLAYING -> throw new IllegalStateException(player.getName() + " should not be in " + playerHand.getStatus() + " status");
                 case SKIPPED -> new RoundResults(player.getName() + " skipped this round", 0);
             };
-            player.collectReward(results);
+            player.collectReward(results, playerHand);
             System.out.println(results.message());
             System.out.println(player.getName() + "'s budget: " + player.getBudget());
         }
@@ -153,56 +154,58 @@ public class Blackjack {
         }
     }
 
-    private List<Action> getPlayerActions(HumanPlayer player) {
-        if (player.getStatus() != PlayerStatus.PLAYING) {
-            throw new IllegalStateException("There are no actions in " + player.getStatus() + " status!");
+    private List<Action> getHandActions(Hand hand) {
+        HumanPlayer player = hand.getHumanOwner();
+        if (hand.getStatus() != HandStatus.PLAYING) {
+            throw new IllegalStateException("There are no actions in " + hand.getStatus() + " status!");
         }
         List<Action> actions = new ArrayList<>(DEFAULT_ACTIONS);
-        Hand hand = player.getHand();
         if (hand.getNumberOfCards() == 2) {
             actions.add(Action.SURRENDER);
             if (player.getBudget() >= hand.getBet()) {
                 actions.add(Action.DOUBLE);
             }
-            if (dealer.isFirstCardAce() && player.getBudget() > 0) {
+            if (dealerHand.isFirstCardAce() && player.getBudget() > 0) {
                 actions.add(Action.INSURANCE);
             }
         }
         return actions;
     }
 
-    private void apply(HumanPlayer player, Action action) {
-        PlayerStatus status = player.getStatus();
-        if (status != PlayerStatus.PLAYING) {
+    private void apply(Hand hand, Action action) {
+        HandStatus status = hand.getStatus();
+        if (status != HandStatus.PLAYING) {
             throw new IllegalStateException("No actions should be applied in " + status + " status!");
         }
         switch (action) {
-            case HIT -> player.draw(deck);
-            case STAND -> player.setStatus(PlayerStatus.STANDING);
-            case SURRENDER -> player.setStatus(PlayerStatus.SURRENDERED);
-            case DOUBLE -> player.executeDoubleAction(deck);
-            case INSURANCE -> executeInsuranceAction(player);
+            case HIT -> hand.draw(deck);
+            case STAND -> hand.setStatus(HandStatus.STANDING);
+            case SURRENDER -> hand.setStatus(HandStatus.SURRENDERED);
+            case DOUBLE -> hand.executeDoubleAction(deck);
+            case INSURANCE -> executeInsuranceAction(hand);
         }
     }
 
-    private void executeInsuranceAction(HumanPlayer player) {
-        IntConsumer consumer = new IntConsumer() {
+    private void executeInsuranceAction(Hand hand) {
+        double maxInsurance = hand.getBet() * 0.5;
+        HumanPlayer player = hand.getHumanOwner();
+        IntFunction<Void> function = new IntFunction<>() {
             @Override
-            public void accept(int value) {
-                player.setInsurance(value);
+            public Void apply(int value) {
+                player.setInsurance(value, maxInsurance);
+                return null;
             }
         };
-        int maxPossibleInsurance = Math.min((int)(player.getHand().getBet() * 0.5), player.getBudget());
-        getPlayerBetOrInsurance(String.format("%s's insurance (1 - %d): ", player.getName(), maxPossibleInsurance), consumer);
+        int maxPossibleInsurance = Math.min((int)maxInsurance, player.getBudget());
+        getPlayerBetOrInsurance(String.format("%s's insurance (1 - %d): ", player.getName(), maxPossibleInsurance), function);
     }
 
-    private void getPlayerBetOrInsurance(String label, IntConsumer consumer) {
+    private <T> T getPlayerBetOrInsurance(String label, IntFunction<T> function) {
         while (true) {
             try {
                 System.out.print(label);
                 String userInput = scanner.nextLine();
-                consumer.accept(Integer.parseInt(userInput));
-                break;
+                return function.apply(Integer.parseInt(userInput));
             } catch (NumberFormatException e) {
                 System.out.println("Invalid input, please try again!");
             } catch (IllegalArgumentException e) {
@@ -217,36 +220,40 @@ public class Blackjack {
         game.play();
     }
 
-    private static boolean isAnyPlayerIn(List<HumanPlayer> players, Set<PlayerStatus> desiredStatuses) {
-        for (HumanPlayer player : players) {
-            if (desiredStatuses.contains(player.getStatus())) {
+    private static boolean isAnyPlayerIn(List<Hand> hands, Set<HandStatus> desiredStatuses) {
+        for (Hand hand : hands) {
+            if (desiredStatuses.contains(hand.getStatus())) {
                 return true;
             }
         }
         return false;
     }
 
-    private static RoundResults handlePlayerStanding(HumanPlayer player, Dealer dealer) {
+    private static RoundResults handlePlayerStanding(Hand playerHand, Hand dealerHand) {
+        HumanPlayer player = playerHand.getHumanOwner();
         String playerName = player.getName();
-        String dealerName = dealer.getName();
-        if (dealer.getStatus() == PlayerStatus.BUSTED) {
+        String dealerName = dealerHand.getOwner().getName();
+        if (dealerHand.getStatus() == HandStatus.BUSTED) {
             return new RoundResults(playerName + " won, because " + dealerName + " busted", 2);
         }
-        boolean dealerHadBlackjack = dealer.getStatus() == PlayerStatus.BLACKJACK;
-        if (dealer.getHandValue() > player.getHandValue()) {
+        boolean dealerHadBlackjack = dealerHand.getStatus() == HandStatus.BLACKJACK;
+        if (dealerHand.getValue() > playerHand.getValue()) {
             return new RoundResults(playerName + " lost to " + dealerName + " by having less points", 0, dealerHadBlackjack);
-        } else if (dealer.getHandValue() == player.getHandValue()) {
-            // TODO check what if dealer has blackjack and player has hand value 21
-            return new RoundResults(playerName + " is in tie with " + dealerName, 1, dealerHadBlackjack);
+        } else if (dealerHand.getValue() == playerHand.getValue()) {
+            if (dealerHadBlackjack) {
+                return new RoundResults(playerName + " lost to " + dealerName + " by having black jack", 0, true);
+            } else {
+                return new RoundResults(playerName + " is in tie with " + dealerName, 1, false);
+            }
         } else {
             return new RoundResults(playerName + " won", 2, dealerHadBlackjack);
         }
     }
 
-    private static RoundResults handlePlayerBlackJack(HumanPlayer player, Dealer dealer) {
-        String playerName = player.getName();
-        if (dealer.getStatus() == PlayerStatus.BLACKJACK) {
-            return new RoundResults(playerName + " lost, because " + dealer.getName() + " has BLACKJACK too", 0, true);
+    private static RoundResults handlePlayerBlackJack(Hand playerHand, Hand dealerHand) {
+        String playerName = playerHand.getOwner().getName();
+        if (dealerHand.getStatus() == HandStatus.BLACKJACK) {
+            return new RoundResults(playerName + " lost, because " + dealerHand.getOwner().getName() + " has BLACKJACK too", 0, true);
         } else {
             return new RoundResults(playerName + " won with BLACKJACK", 2.5);
         }
@@ -267,13 +274,5 @@ public class Blackjack {
             joiner.add(action.label);
         }
         return joiner.toString();
-    }
-
-    private static void drawAllPlayers(Deck deck, List<AbstractPlayer> players) {
-        for (AbstractPlayer player : players) {
-            if (player.getStatus() == PlayerStatus.PLAYING) {
-                player.draw(deck);
-            }
-        }
     }
 }

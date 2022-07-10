@@ -20,6 +20,8 @@ public class Hand {
     private final AbstractPlayer owner;
     protected HandStatus status = PLAYING;
     private int bet;
+    private boolean splitted = false;
+    private int index = 1;
 
     public Hand(AbstractPlayer owner, int bet) {
         this.owner = owner;
@@ -73,7 +75,15 @@ public class Hand {
         } else {
             valueAsString = Integer.toString(value);
         }
-        return owner.getName() + ": " + cards + " (" + valueAsString + ")";
+        return String.format("%s: %s (%s)", getHandLabel(), cards, valueAsString);
+    }
+
+    public String getHandLabel() {
+        String indexLabel = "";
+        if (splitted) {
+            indexLabel = " hand #" + index;
+        }
+        return owner.getName() + indexLabel;
     }
 
     public HandStatus getStatus() {
@@ -102,7 +112,7 @@ public class Hand {
     }
 
     public void setStatus(HandStatus status) {
-        if (status != HandStatus.PLAYING) {
+        if (this.status != HandStatus.PLAYING) {
             throw new IllegalStateException("Status can be set only for player in " + HandStatus.PLAYING + " status!");
         }
         this.status = status;
@@ -115,5 +125,27 @@ public class Hand {
         if (status == HandStatus.PLAYING) {
             status = HandStatus.STANDING;
         }
+    }
+
+    public boolean isSplittable() {
+        return !splitted && cards.size() == 2 && cards.get(0).rank() == cards.get(1).rank();
+    }
+
+    public boolean isSplitted() {
+        return splitted;
+    }
+
+    public Hand split(Deck deck) {
+        if (status != PLAYING && isSplittable()) {
+            throw new IllegalStateException("This hand is not splittable!");
+        }
+        this.splitted = true;
+        Hand newHand = getHumanOwner().createHand(bet).orElseThrow();
+        newHand.cards.add(this.cards.remove(1));
+        newHand.splitted = true;
+        newHand.index = this.index + 1;
+        this.draw(deck);
+        newHand.draw(deck);
+        return newHand;
     }
 }

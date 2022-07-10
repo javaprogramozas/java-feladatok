@@ -6,7 +6,8 @@ public enum Action {
     STAND("(s)tand", 's'),
     SURRENDER("s(u)rrender", 'u'),
     DOUBLE("(d)ouble", 'd'),
-    INSURANCE("(i)nsurance", 'i');
+    INSURANCE("(i)nsurance", 'i'),
+    SPLIT("s(p)lit", 'p');
 
     public final String label;
     public final char command;

@@ -10,6 +10,7 @@ import oo.blackjack.model.hand.HandStatus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
@@ -103,7 +104,8 @@ public class Blackjack {
     }
 
     private void actionDraws() {
-        for (Hand hand : playerHands) {
+        for (int i = 0; i < playerHands.size(); i++) {
+            Hand hand = playerHands.get(i);
             System.out.println(hand);
             while (hand.getStatus() == HandStatus.PLAYING) {
                 List<Action> actions = getHandActions(hand);
@@ -111,7 +113,10 @@ public class Blackjack {
                 String userInput = scanner.nextLine();
                 Optional<Action> selectedAction = findActionByCommand(actions, userInput);
                 if (selectedAction.isPresent()) {
-                    apply(hand, selectedAction.get());
+                    Optional<Hand> optionalHand = apply(hand, selectedAction.get());
+                    if (optionalHand.isPresent()) {
+                        playerHands.add(i + 1, optionalHand.get());
+                    }
                     System.out.println(hand);
                 } else {
                     System.out.println("Unknown action command: " + userInput);
@@ -133,18 +138,25 @@ public class Blackjack {
     private void evaluateRound() {
         for (Hand playerHand : playerHands) {
             HumanPlayer player = playerHand.getHumanOwner();
+            String handLabel = playerHand.getHandLabel();
             RoundResults results = switch (playerHand.getStatus()) {
-                case BUSTED -> new RoundResults(player.getName() + " busted and lost", 0, dealerHand.getStatus() == HandStatus.BLACKJACK);
-                case SURRENDERED -> new RoundResults(player.getName() + " surrendered", 0.5);
+                case BUSTED -> new RoundResults(handLabel + " busted and lost", 0, dealerHand.getStatus() == HandStatus.BLACKJACK);
+                case SURRENDERED -> new RoundResults(handLabel + " surrendered", 0.5);
                 case BLACKJACK -> handlePlayerBlackJack(playerHand, dealerHand);
                 case STANDING -> handlePlayerStanding(playerHand, dealerHand);
-                case PLAYING -> throw new IllegalStateException(player.getName() + " should not be in " + playerHand.getStatus() + " status");
-                case SKIPPED -> new RoundResults(player.getName() + " skipped this round", 0);
+                case PLAYING -> throw new IllegalStateException(handLabel + " should not be in " + playerHand.getStatus() + " status");
             };
             player.collectReward(results, playerHand);
             System.out.println(results.message());
-            System.out.println(player.getName() + "'s budget: " + player.getBudget());
+            if (lastHandOf(playerHand, player)) {
+                System.out.println(player.getName() + "'s budget: " + player.getBudget());
+            }
         }
+    }
+
+    private boolean lastHandOf(Hand hand, HumanPlayer player) {
+        int currentIndex = playerHands.indexOf(hand);
+        return !(currentIndex + 1 < playerHands.size() && playerHands.get(currentIndex + 1).getOwner().equals(player));
     }
 
     private void displayPostGameStatus() {
@@ -161,29 +173,37 @@ public class Blackjack {
         }
         List<Action> actions = new ArrayList<>(DEFAULT_ACTIONS);
         if (hand.getNumberOfCards() == 2) {
-            actions.add(Action.SURRENDER);
-            if (player.getBudget() >= hand.getBet()) {
+            if (!hand.isSplitted()) {
+                actions.add(Action.SURRENDER);
+            }
+            if (!hand.isSplitted() && player.getBudget() >= hand.getBet()) {
                 actions.add(Action.DOUBLE);
             }
             if (dealerHand.isFirstCardAce() && player.getBudget() > 0) {
                 actions.add(Action.INSURANCE);
             }
+            if (hand.isSplittable() && player.getBudget() >= hand.getBet()) {
+                actions.add(Action.SPLIT);
+            }
         }
         return actions;
     }
 
-    private void apply(Hand hand, Action action) {
+    private Optional<Hand> apply(Hand hand, Action action) {
         HandStatus status = hand.getStatus();
         if (status != HandStatus.PLAYING) {
             throw new IllegalStateException("No actions should be applied in " + status + " status!");
         }
+        Hand newHand = null;
         switch (action) {
             case HIT -> hand.draw(deck);
             case STAND -> hand.setStatus(HandStatus.STANDING);
             case SURRENDER -> hand.setStatus(HandStatus.SURRENDERED);
             case DOUBLE -> hand.executeDoubleAction(deck);
             case INSURANCE -> executeInsuranceAction(hand);
+            case SPLIT -> newHand = hand.split(deck);
         }
+        return Optional.ofNullable(newHand);
     }
 
     private void executeInsuranceAction(Hand hand) {
@@ -230,8 +250,7 @@ public class Blackjack {
     }
 
     private static RoundResults handlePlayerStanding(Hand playerHand, Hand dealerHand) {
-        HumanPlayer player = playerHand.getHumanOwner();
-        String playerName = player.getName();
+        String playerName = playerHand.getHandLabel();
         String dealerName = dealerHand.getOwner().getName();
         if (dealerHand.getStatus() == HandStatus.BUSTED) {
             return new RoundResults(playerName + " won, because " + dealerName + " busted", 2);
@@ -251,11 +270,10 @@ public class Blackjack {
     }
 
     private static RoundResults handlePlayerBlackJack(Hand playerHand, Hand dealerHand) {
-        String playerName = playerHand.getOwner().getName();
         if (dealerHand.getStatus() == HandStatus.BLACKJACK) {
-            return new RoundResults(playerName + " lost, because " + dealerHand.getOwner().getName() + " has BLACKJACK too", 0, true);
+            return new RoundResults(playerHand.getHandLabel() + " lost, because " + dealerHand.getOwner().getName() + " has BLACKJACK too", 0, true);
         } else {
-            return new RoundResults(playerName + " won with BLACKJACK", 2.5);
+            return new RoundResults(playerHand.getHandLabel() + " won with BLACKJACK", 2.5);
         }
     }
 

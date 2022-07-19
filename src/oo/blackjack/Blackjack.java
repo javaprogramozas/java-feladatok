@@ -2,20 +2,20 @@ package oo.blackjack;
 
 import oo.blackjack.model.RoundResults;
 import oo.blackjack.model.cards.Deck;
+import oo.blackjack.model.hand.Hand;
+import oo.blackjack.model.hand.HandStatus;
 import oo.blackjack.model.players.Action;
 import oo.blackjack.model.players.Dealer;
-import oo.blackjack.model.hand.Hand;
 import oo.blackjack.model.players.HumanPlayer;
-import oo.blackjack.model.hand.HandStatus;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.function.IntFunction;
+import java.util.stream.Collectors;
 
 public class Blackjack {
 
@@ -65,12 +65,8 @@ public class Blackjack {
     }
 
     private boolean hasPlayerWithBudget() {
-        for (HumanPlayer player : players) {
-            if (player.getBudget() > 0) {
-                return true;
-            }
-        }
-        return false;
+        return players.stream()
+                .anyMatch(player -> player.getBudget() > 0);
     }
 
     private void collectBetsAndCreateHands() {
@@ -78,29 +74,17 @@ public class Blackjack {
         System.out.println("(place 0 bet, if you would like to skip this round)");
         playerHands = new ArrayList<>();
         for (HumanPlayer player : players) {
-            IntFunction<Optional<Hand>> function = new IntFunction<>() {
-                @Override
-                public Optional<Hand> apply(int value) {
-                    return player.createHand(value);
-                }
-            };
-            Optional<Hand> optionalHand
-                    = getPlayerBetOrInsurance(String.format("%s's bet (0 - %d): ", player.getName(), player.getBudget()), function);
-            if (optionalHand.isPresent()) {
-                playerHands.add(optionalHand.get());
-            }
+            Optional<Hand> optionalHand = getPlayerBetOrInsurance(
+                    String.format("%s's bet (0 - %d): ", player.getName(), player.getBudget()), player::createHand);
+            optionalHand.ifPresent(hand -> playerHands.add(hand));
         }
         dealerHand = new Hand(dealer, 0);
     }
 
     private void initialDraws() {
-        for (Hand hand : playerHands) {
-            hand.draw(deck);
-        }
+        playerHands.forEach(hand -> hand.draw(deck));
         dealerHand.draw(deck);
-        for (Hand hand : playerHands) {
-            hand.draw(deck);
-        }
+        playerHands.forEach(hand -> hand.draw(deck));
     }
 
     private void actionDraws() {
@@ -160,10 +144,8 @@ public class Blackjack {
     }
 
     private void displayPostGameStatus() {
-        players.sort(new PlayerBudgetComparator().reversed());
-        for (HumanPlayer player : players) {
-            System.out.println(player.getName() + " finished with " + player.getBudget() + " tokens");
-        }
+        players.sort(Comparator.comparingInt(HumanPlayer::getBudget).reversed());
+        players.forEach(player -> System.out.println(player.getName() + " finished with " + player.getBudget() + " tokens"));
     }
 
     private List<Action> getHandActions(Hand hand) {
@@ -209,12 +191,9 @@ public class Blackjack {
     private void executeInsuranceAction(Hand hand) {
         double maxInsurance = hand.getBet() * 0.5;
         HumanPlayer player = hand.getHumanOwner();
-        IntFunction<Void> function = new IntFunction<>() {
-            @Override
-            public Void apply(int value) {
-                player.setInsurance(value, maxInsurance);
-                return null;
-            }
+        IntFunction<Void> function = value -> {
+            player.setInsurance(value, maxInsurance);
+            return null;
         };
         int maxPossibleInsurance = Math.min((int)maxInsurance, player.getBudget());
         getPlayerBetOrInsurance(String.format("%s's insurance (1 - %d): ", player.getName(), maxPossibleInsurance), function);
@@ -241,12 +220,8 @@ public class Blackjack {
     }
 
     private static boolean isAnyPlayerIn(List<Hand> hands, Set<HandStatus> desiredStatuses) {
-        for (Hand hand : hands) {
-            if (desiredStatuses.contains(hand.getStatus())) {
-                return true;
-            }
-        }
-        return false;
+        return hands.stream()
+                .anyMatch(hand -> desiredStatuses.contains(hand.getStatus()));
     }
 
     private static RoundResults handlePlayerStanding(Hand playerHand, Hand dealerHand) {
@@ -278,19 +253,14 @@ public class Blackjack {
     }
 
     private static Optional<Action> findActionByCommand(List<Action> actions, String userInput) {
-        for (Action action : actions) {
-            if (Character.toString(action.command).equalsIgnoreCase(userInput)) {
-                return Optional.of(action);
-            }
-        }
-        return Optional.empty();
+        return actions.stream()
+                .filter(action -> Character.toString(action.command).equalsIgnoreCase(userInput))
+                .findFirst();
     }
 
     private static String getActionLabels(List<Action> actions) {
-        StringJoiner joiner = new StringJoiner(", ");
-        for (Action action : actions) {
-            joiner.add(action.label);
-        }
-        return joiner.toString();
+        return actions.stream()
+                .map(action -> action.label)
+                .collect(Collectors.joining(", "));
     }
 }

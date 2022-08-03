@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.Arrays;
 import java.util.function.UnaryOperator;
 
 public class A19 {
@@ -71,6 +70,28 @@ public class A19 {
     }
 
     private static String cypher(String text) {
+        StringBuilder buffer = cleanText(text);
+        char[][] block = createBlock(buffer.length(), false);
+
+        TriPredicate writeChar = (bi, i, j) -> bi < buffer.length();
+        writeBlock(buffer, block, writeChar);
+
+        return readBlockByColumns(block);
+    }
+
+    private static String decypher(String text) {
+        StringBuilder buffer = cleanText(text);
+        int length = buffer.length();
+        char[][] block = createBlock(length, true);
+        int missingChars = (block.length * block[0].length) - length;
+
+        TriPredicate writeChar = (bi, i, j) -> i < block.length - missingChars || j != block[i].length - 1;
+        writeBlock(buffer, block, writeChar);
+
+        return readBlockByColumns(block);
+    }
+
+    private static StringBuilder cleanText(String text) {
         StringBuilder buffer = new StringBuilder(text.length());
 
         for (int i = 0; i < text.length(); i++) {
@@ -79,7 +100,10 @@ public class A19 {
                 buffer.append(Character.toLowerCase(c));
             }
         }
-        int length = buffer.length();
+        return buffer;
+    }
+
+    private static char[][] createBlock(int length, boolean invert) {
         double sqrt = Math.sqrt(length);
         int column = (int) Math.ceil(sqrt);
         int row = (int) Math.floor(sqrt);
@@ -87,27 +111,26 @@ public class A19 {
         if (row * column < length) {
             row++;
         }
+        return invert ? new char[column][row] : new char[row][column];
+    }
 
-        char[][] block = new char[row][column];
-
+    private static void writeBlock(StringBuilder buffer, char[][] block, TriPredicate writeChar) {
         int bufferIndex = 0;
-        for (int i = 0; i < row; i++) {
-            for (int j = 0; j < column; j++) {
-                if (bufferIndex < buffer.length()) {
+        for (int i = 0; i < block.length; i++) {
+            for (int j = 0; j < block[i].length; j++) {
+                if (writeChar.test(bufferIndex, i, j)) {
                     block[i][j] = buffer.charAt(bufferIndex++);
                 } else {
                     block[i][j] = ' ';
                 }
             }
         }
+    }
 
-        for (char[] chars : block) {
-            System.out.println(Arrays.toString(chars));
-        }
-
-        buffer = new StringBuilder(row * column);
-        for (int i = 0; i < column; i++) {
-            for (int j = 0; j < row; j++) {
+    private static String readBlockByColumns(char[][] block) {
+        StringBuilder buffer = new StringBuilder(block.length * block[0].length);
+        for (int i = 0; i < block.length; i++) {
+            for (int j = 0; j < block[i].length; j++) {
                 if (block[j][i] != ' ') {
                     buffer.append(block[j][i]);
                 }
@@ -116,10 +139,9 @@ public class A19 {
         return buffer.toString();
     }
 
-    private static String decypher(String line) {
-        return "";
-    }
-
     private record ExecutionParameters(String command, String inputFile, String outputFile) {}
 
+    private interface TriPredicate {
+        boolean test(int bufferIndex, int i, int j);
+    }
 }

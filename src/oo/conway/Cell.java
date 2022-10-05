@@ -1,31 +1,29 @@
 package oo.conway;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 public class Cell extends Rectangle {
 
-    private boolean alive = false;
+    private final BooleanProperty aliveProperty = new SimpleBooleanProperty(false);
 
     public Cell() {
         super(20, 20, Color.WHITE);
+        aliveProperty.addListener(this::handleAliveChange);
     }
 
-    public boolean isAlive() {
-        return alive;
-    }
-
-    public void flip() {
-        alive = !alive;
-        if (alive) {
+    private void handleAliveChange(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+        if (newValue) {
             setFill(Color.BLACK);
         } else {
             setFill(Color.WHITE);
         }
     }
 
-    public void reset() {
-        alive = false;
-        setFill(Color.WHITE);
+    public BooleanProperty aliveProperty() {
+        return aliveProperty;
     }
 }

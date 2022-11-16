@@ -27,4 +27,8 @@ public class Cell {
     public boolean hasWall(Direction direction) {
         return walls.contains(direction);
     }
+
+    public EnumSet<Direction> getWalls() {
+        return walls;
+    }
 }

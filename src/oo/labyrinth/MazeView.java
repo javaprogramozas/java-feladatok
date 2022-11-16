@@ -41,7 +41,7 @@ public class MazeView extends VBox {
         for (int i = 0; i < children.size(); i++) {
             Node node = children.get(i);
             if (node instanceof ViewCell cell) {
-                // TODO bind cell to view model
+                cell.wallsProperty().bindBidirectional(viewModel.getWallsProperty(i));
             }
         }
     }
@@ -78,7 +78,7 @@ public class MazeView extends VBox {
     }
 
     private void handleGenerateButton(ActionEvent event) {
-        // TODO start maze generation
+        viewModel.generateMaze();
     }
 
 }

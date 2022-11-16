@@ -12,8 +12,8 @@ public class Maze {
 
     private Cell[][] grid;
 
-    public Maze(int size) {
-        this.grid = initGrid(size);
+    public Maze(int rows, int columns) {
+        this.grid = initGrid(rows, columns);
     }
 
     public void generate() {
@@ -62,8 +62,8 @@ public class Maze {
         return getCell(cell.getRow() + direction.rowDelta, cell.getColumn() + direction.columnDelta);
     }
 
-    private static Cell[][] initGrid(int size) {
-        Cell[][] grid = new Cell[size][size];
+    private static Cell[][] initGrid(int rows, int columns) {
+        Cell[][] grid = new Cell[rows][columns];
         for (int row = 0; row < grid.length; row++) {
             for (int column = 0; column < grid[row].length; column++) {
                 grid[row][column] = new Cell(row, column);

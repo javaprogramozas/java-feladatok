@@ -28,7 +28,7 @@ public class MazeViewModel {
     }
 
     public void generateMaze() {
-        Maze maze = new Maze(rows, columns);
+        Maze2 maze = new Maze2(rows, columns);
         long startTime = System.currentTimeMillis();
         maze.generate();
         long endTime = System.currentTimeMillis();

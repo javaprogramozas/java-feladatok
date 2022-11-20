@@ -1,11 +1,14 @@
-package oo.labyrinth;
+package oo.labyrinth.view;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ListCell;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.HBox;
@@ -14,12 +17,17 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import oo.labyrinth.generator.model.MazeGeneratorType;
+
+import java.util.EnumSet;
+import java.util.List;
 
 public class MazeView extends VBox {
 
     private final MazeViewModel viewModel;
     private TilePane tilePane;
     private Button generateButton;
+    private ComboBox<MazeGeneratorType> typeSelector;
     private BorderRegistry borderRegistry = new BorderRegistry();
 
     public MazeView(int size) {
@@ -71,10 +79,37 @@ public class MazeView extends VBox {
     }
 
     private HBox createButtons() {
+        createTypeSelector();
         generateButton = createButton("Generate", this::handleGenerateButton);
-        HBox buttons = new HBox(generateButton);
+        HBox buttons = new HBox(typeSelector, generateButton);
         buttons.setSpacing(5);
         return buttons;
+    }
+
+    private void createTypeSelector() {
+        typeSelector = new ComboBox<>(FXCollections.observableList(List.copyOf(EnumSet.allOf(MazeGeneratorType.class))));
+        typeSelector.getSelectionModel().selectFirst();
+        typeSelector.setOnAction(this::handleTypeSelector);
+        typeSelector.setCellFactory(view -> createListCell());
+        typeSelector.setButtonCell(createListCell());
+    }
+
+    private static ListCell<MazeGeneratorType> createListCell() {
+        return new ListCell<>() {
+            @Override
+            public void updateItem(MazeGeneratorType item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null) {
+                    setText(null);
+                } else {
+                    setText(item.label);
+                }
+            }
+        };
+    }
+
+    private void handleTypeSelector(ActionEvent actionEvent) {
+        viewModel.setMazeGeneratorType(typeSelector.getValue());
     }
 
     private void handleGenerateButton(ActionEvent event) {

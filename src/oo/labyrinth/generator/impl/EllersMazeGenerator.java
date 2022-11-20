@@ -1,4 +1,8 @@
-package oo.labyrinth;
+package oo.labyrinth.generator.impl;
+
+import oo.labyrinth.generator.AbstractMazeGenerator;
+import oo.labyrinth.generator.model.Cell;
+import oo.labyrinth.generator.model.Direction;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,12 +13,10 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class Maze2 {
+public class EllersMazeGenerator extends AbstractMazeGenerator {
 
-    private Cell[][] grid;
-
-    public Maze2(int rows, int columns) {
-        this.grid = initGrid(rows, columns);
+    public EllersMazeGenerator(int rows, int columns) {
+        super(rows, columns);
     }
 
     public void generate() {
@@ -63,12 +65,12 @@ public class Maze2 {
                         .filter(cell -> cell.getRow() == currentRow)
                         .collect(Collectors.toSet());
                 int numOfCellsToSelect = cells.size() == 1 ? 1 : random.nextInt(cells.size()) + 1;
-                Iterator<Cell> cellsIterator = Set.copyOf(cells).iterator();
+                Iterator<Cell> cellsIterator = cells.iterator();
                 while (numOfCellsToSelect > 0) {
                     Cell current = cellsIterator.next();
                     Cell below = grid[row + 1][current.getColumn()];
 
-                    cells.add(below);
+                    groupToCells.get(currentGroup).add(below);
                     cellToGroup.put(below, currentGroup);
                     current.removeWall(Direction.SOUTH);
                     below.removeWall(Direction.NORTH);
@@ -107,19 +109,5 @@ public class Maze2 {
                 right.removeWall(Direction.WEST);
             }
         }
-    }
-
-    public Cell getCell(int row, int column) {
-        return grid[row][column];
-    }
-
-    private static Cell[][] initGrid(int rows, int columns) {
-        Cell[][] grid = new Cell[rows][columns];
-        for (int row = 0; row < grid.length; row++) {
-            for (int column = 0; column < grid[row].length; column++) {
-                grid[row][column] = new Cell(row, column);
-            }
-        }
-        return grid;
     }
 }

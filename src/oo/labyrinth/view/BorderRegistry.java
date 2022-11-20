@@ -1,7 +1,8 @@
-package oo.labyrinth;
+package oo.labyrinth.view;
 
 import javafx.scene.layout.Border;
 import javafx.scene.paint.Color;
+import oo.labyrinth.generator.model.Direction;
 
 import java.util.Map;
 import java.util.Set;

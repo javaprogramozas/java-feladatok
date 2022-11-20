@@ -1,4 +1,4 @@
-package oo.labyrinth;
+package oo.labyrinth.generator.model;
 
 public enum Direction {
 

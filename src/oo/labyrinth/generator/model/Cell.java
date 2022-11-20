@@ -1,4 +1,4 @@
-package oo.labyrinth;
+package oo.labyrinth.generator.model;
 
 import java.util.EnumSet;
 

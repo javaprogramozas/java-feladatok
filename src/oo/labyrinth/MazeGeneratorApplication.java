@@ -3,6 +3,7 @@ package oo.labyrinth;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import oo.labyrinth.view.MazeView;
 
 public class MazeGeneratorApplication extends Application {
 

@@ -1,4 +1,8 @@
-package oo.labyrinth;
+package oo.labyrinth.generator.impl;
+
+import oo.labyrinth.generator.AbstractMazeGenerator;
+import oo.labyrinth.generator.model.Cell;
+import oo.labyrinth.generator.model.Direction;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,14 +12,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public class Maze {
+public class BacktrackMazeGenerator extends AbstractMazeGenerator {
 
-    private Cell[][] grid;
-
-    public Maze(int rows, int columns) {
-        this.grid = initGrid(rows, columns);
+    public BacktrackMazeGenerator(int rows, int columns) {
+        super(rows, columns);
     }
 
+    @Override
     public void generate() {
         Set<Cell> visitedCells = new HashSet<>();
         LinkedList<Cell> trackedCells = new LinkedList<>();
@@ -52,24 +55,6 @@ public class Maze {
             }
         }
         return neighbourDirections;
-    }
-
-    public Cell getCell(int row, int column) {
-        return grid[row][column];
-    }
-
-    public Cell getCell(Cell cell, Direction direction) {
-        return getCell(cell.getRow() + direction.rowDelta, cell.getColumn() + direction.columnDelta);
-    }
-
-    private static Cell[][] initGrid(int rows, int columns) {
-        Cell[][] grid = new Cell[rows][columns];
-        for (int row = 0; row < grid.length; row++) {
-            for (int column = 0; column < grid[row].length; column++) {
-                grid[row][column] = new Cell(row, column);
-            }
-        }
-        return grid;
     }
 
     private Optional<Direction> selectRandomNeighbourDirection(Set<Cell> visitedCells, Cell current) {

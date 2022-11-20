@@ -1,4 +1,4 @@
-package oo.labyrinth;
+package oo.labyrinth.view;
 
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;

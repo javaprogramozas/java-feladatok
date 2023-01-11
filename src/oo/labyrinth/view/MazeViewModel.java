@@ -4,12 +4,13 @@ import javafx.beans.property.Property;
 import javafx.beans.property.SimpleSetProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
-import oo.labyrinth.generator.AbstractMazeGenerator;
+import oo.labyrinth.generator.MazeGenerator;
 import oo.labyrinth.generator.impl.BacktrackMazeGenerator;
 import oo.labyrinth.generator.impl.EllersMazeGenerator;
-import oo.labyrinth.generator.model.MazeGeneratorType;
 import oo.labyrinth.generator.model.Cell;
 import oo.labyrinth.generator.model.Direction;
+import oo.labyrinth.generator.model.Maze;
+import oo.labyrinth.generator.model.MazeGeneratorType;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -35,16 +36,16 @@ public class MazeViewModel {
     }
 
     public void generateMaze() {
-        AbstractMazeGenerator generator = getMazeGenerator();
+        MazeGenerator generator = getMazeGenerator();
         long startTime = System.currentTimeMillis();
-        generator.generate();
+        Maze maze = generator.generate(rows, columns);
         long endTime = System.currentTimeMillis();
         long durationTime = endTime - startTime;
         System.out.println("Maze generated in " + durationTime + " ms");
         int index = 0;
         for (int row = 0; row < rows; row++) {
             for (int column = 0; column < columns; column++) {
-                Cell cell = generator.getCell(row, column);
+                Cell cell = maze.getCell(row, column);
                 wallsPropertyList.get(index).setValue(FXCollections.observableSet(cell.getWalls()));
                 index++;
             }
@@ -55,10 +56,10 @@ public class MazeViewModel {
         this.mazeGeneratorType = value;
     }
 
-    private AbstractMazeGenerator getMazeGenerator() {
+    private MazeGenerator getMazeGenerator() {
         return switch (mazeGeneratorType) {
-            case BACKTRACK -> new BacktrackMazeGenerator(rows, columns);
-            case ELLERS -> new EllersMazeGenerator(rows, columns);
+            case BACKTRACK -> new BacktrackMazeGenerator();
+            case ELLERS -> new EllersMazeGenerator();
         };
     }
 }

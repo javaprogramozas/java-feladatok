@@ -7,7 +7,6 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import oo.labyrinth.generator.model.Direction;
-import oo.labyrinth.view.BorderRegistry;
 
 public class ViewCell extends Region implements SetChangeListener<Direction> {
 
